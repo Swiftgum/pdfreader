@@ -1,6 +1,6 @@
 {
   "name": "@swiftgum/pdfreader",
-  "version": "0.1.52",
+  "version": "0.1.53",
   "description": "Easiest way to display and interact with PDFs from your web app.",
   "main": "dist/pdfreader.cjs",
   "types": "dist/src/index.d.ts",
