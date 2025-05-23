@@ -1,4 +1,6 @@
 import { defineConfig } from "vite";
+
+import { analyzer } from "vite-bundle-analyzer";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
@@ -15,7 +17,12 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     rollupOptions: {
-      external: ["react", "react/jsx-runtime", "react/jsx-dev-runtime"],
+      external: [/^react($|\/)/],
+      output: {
+        globals: {
+          react: "React",
+        },
+      },
     },
   },
   plugins: [react()],

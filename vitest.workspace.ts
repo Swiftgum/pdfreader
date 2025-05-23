@@ -6,7 +6,7 @@ export default defineWorkspace([
   // You can safely remove it from the workspace file
   // Or move the browser test configuration to the config file.
   {
-    extends: "./vite.dev.config.ts",
+    extends: "./vite.config.ts",
     test: {
       browser: {
         enabled: true,
