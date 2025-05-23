@@ -4,7 +4,7 @@
 
 A dead simple, stylable, React PDF reader component.
 
-[Docs: https://pdfreader.fileforge.com](https://pdfreader.fileforge.com/?path=/docs/viewer--docs)
+[Docs: https://swiftgum.github.io/pdfreader/](https://swiftgum.github.io/pdfreader/)
 
 > Important: This component is still in development and not ready for production use.
 
@@ -24,8 +24,10 @@ A dead simple, stylable, React PDF reader component.
 ## Installation
 
 ```bash
-npm i @swiftgum/pdfreader
+npm i @swiftgum/pdfreader react pdfjs-dist@4.4
 ```
+
+Note: this package requires React 18 or 19, and pdfjs-dist 4.4 or higher. Note: pdfjs-dist 5 is not supported yet.
 
 ## Usage
 
