@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 
-import { analyzer } from "vite-bundle-analyzer";
+import { externalizeDeps } from "vite-plugin-externalize-deps";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
@@ -16,14 +16,6 @@ export default defineConfig({
     },
     emptyOutDir: true,
     sourcemap: true,
-    rollupOptions: {
-      external: [/^react($|\/)/],
-      output: {
-        globals: {
-          react: "React",
-        },
-      },
-    },
   },
-  plugins: [react()],
+  plugins: [react(), externalizeDeps()],
 });
