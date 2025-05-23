@@ -24,7 +24,7 @@ A dead simple, stylable, React PDF reader component.
 ## Installation
 
 ```bash
-npm i @fileforge/pdfreader
+npm i @swiftgum/pdfreader
 ```
 
 ## Usage
@@ -36,7 +36,7 @@ You can add and remove parts of the reader by adding or removing the related com
 ```jsx
 import React from 'react';
 
-import { Root, CurrentPage, ZoomOut, Zoom, ZoomIn, Outline, OutlineItem, OutlineChildItems, Viewport, Pages, Page, CanvasLayer, TextLayer, AnnotationLayer } from '@fileforge/pdfreader';
+import { Root, CurrentPage, ZoomOut, Zoom, ZoomIn, Outline, OutlineItem, OutlineChildItems, Viewport, Pages, Page, CanvasLayer, TextLayer, AnnotationLayer } from '@swiftgum/pdfreader';
 
 export const Reader = ({ fileURL }: { fileURL: string }) => {
   return (
@@ -72,4 +72,5 @@ export const Reader = ({ fileURL }: { fileURL: string }) => {
 
 ## Sponsors
 
-This project is sponsored by [Fileforge](https://fileforge.com).
+This project is sponsored by [Swiftgum](https://www.swiftgum.com).
+This project was sponsored by [Fileforge](https://fileforge.com).
