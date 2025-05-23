@@ -1,4 +1,6 @@
 import type { StorybookConfig } from "@storybook/react-vite";
+import viteDevConfig from "../vite.dev.config";
+import { mergeConfig } from "vite";
 
 const config: StorybookConfig = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
@@ -20,6 +22,9 @@ const config: StorybookConfig = {
   framework: {
     name: "@storybook/react-vite",
     options: {},
+  },
+  viteFinal: async (config) => {
+    return mergeConfig(config, viteDevConfig);
   },
   staticDirs: ["../static"],
 };

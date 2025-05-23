@@ -18,5 +18,5 @@ export default defineConfig({
       external: ["react"],
     },
   },
-  plugins: [react()],
+  // plugins: [react()],
 });
