@@ -1,35 +1,43 @@
+# .github/workflows/build-and-publish.yml
 name: Build and Publish
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:        # lets you trigger it by hand, too
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-
     environment:
-      name: github-pages            # for the Storybook deploy action
-
+      name: github-pages
     permissions:
-      contents: write               # commit + tag
-      pages: write                  # GitHub Pages
-      id-token: write               # npm publish provenance
+      contents: write
+      pages:    write
+      id-token: write
 
     steps:
-      # ---------- auth ----------
+      # ----- auth (skip under act) -----
       - uses: actions/create-github-app-token@v1
+        if: ${{ !env.ACT }}             # ← skip locally
         id: app-token
         with:
           app-id:      ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      # ---------- checkout ----------
+      # ----- checkout -----
       - uses: actions/checkout@v4
         with:
-          token: ${{ steps.app-token.outputs.token }}
+          # when skipped we won’t have app-token.id, so guard the input
+          token: ${{ steps.app-token.outputs.token || github.token }}
 
-      # ---------- Node & pnpm ----------
+      # ----- install pnpm CLI -----
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      # ----- Node + cache -----
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -37,44 +45,43 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
           registry-url: https://registry.npmjs.org
 
-      - uses: pnpm/action-setup@v4       # installs the pnpm CLI
-        with:
-          version: 9                     # pin or use "latest"
-          run_install: false             # we install in the next step
-
-      # ---------- install & build ----------
+      # ----- install & builds -----
       - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: pnpm run build-storybook
 
-      - run: pnpm run build              # vite + tsc
-
-      - run: pnpm run build-storybook    # outputs ./storybook-static
-
-      # ---------- git identity ----------
-      - run: |
+      # ----- git identity (skipped under act) -----
+      - if: ${{ !env.ACT }}
+        run: |
           git config --global user.email "contact@swiftgum.com"
           git config --global user.name  "github-actions[bot]"
 
-      # ---------- version bump ----------
-      - id: version
+      # ----- version bump (skipped under act) -----
+      - if: ${{ !env.ACT }}
+        id: version
         run: |
           tag=$(npm version patch -m 'Bump version to %s [skip ci]')
           echo "tag=${tag#v}" >> "$GITHUB_OUTPUT"
 
-      # ---------- GitHub Release ----------
-      - uses: ncipollo/release-action@v1
+      # ----- GitHub Release (skipped under act) -----
+      - if: ${{ !env.ACT }}
+        uses: ncipollo/release-action@v1
         with:
           tag:  ${{ steps.version.outputs.tag }}
           body: "Release ${{ steps.version.outputs.tag }}. Check it out on [NPM ➡️](https://www.npmjs.com/package/@swiftgum/pdfreader/v/${{ steps.version.outputs.tag }})."
 
-      # ---------- npm publish ----------
-      - run: npm publish --access public
+      # ----- npm publish (skipped under act) -----
+      - if: ${{ !env.ACT }}
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # ---------- push commit + tag ----------
-      - run: git push origin --follow-tags
+      # ----- push commit + tag (skipped under act) -----
+      - if: ${{ !env.ACT }}
+        run: git push origin --follow-tags
 
-      # ---------- deploy Storybook to GitHub Pages ----------
-      - uses: bitovi/github-actions-storybook-to-github-pages@v1.0.3
+      # ----- deploy Storybook (skipped under act) -----
+      - if: ${{ !env.ACT }}
+        uses: bitovi/github-actions-storybook-to-github-pages@v1.0.3
         with:
           path: storybook-static
