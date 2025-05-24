@@ -49,7 +49,7 @@ export const Thumbnails = ({
   children,
   ...props
 }: HTMLProps<HTMLDivElement> & {
-  children: ReactElement<typeof Thumbnail>;
+  children: ReactElement<HTMLProps<HTMLCanvasElement> & { pageNumber?: number }>;
 }) => {
   const { pdfDocumentProxy } = usePDFDocument();
   const [pageCount, setPageCount] = useState<number>(0);

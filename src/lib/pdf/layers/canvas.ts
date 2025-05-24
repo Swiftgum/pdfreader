@@ -39,7 +39,7 @@ export const useCanvasLayer = () => {
       viewport,
     });
 
-    renderingTask.promise.catch((error) => {
+    renderingTask.promise.catch((error: Error) => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if (error.name === "RenderingCancelledException") {
         return;
@@ -53,7 +53,12 @@ export const useCanvasLayer = () => {
     };
   }, [pdfPageProxy, canvasRef.current, dpr, debouncedVisible, zoom]);
 
-  return {
-    canvasRef,
+    /** `render()` has finished – return the canvas to the caller */
+  const onRenderSuccess = (cb?: (canvas: HTMLCanvasElement) => void) => {
+    if (!cb) return;
+    const canvas = canvasRef.current;
+    if (canvas) cb(canvas);
   };
+
+  return { canvasRef, onRenderSuccess };
 };

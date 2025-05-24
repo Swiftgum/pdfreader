@@ -2,20 +2,20 @@
   "name": "@swiftgum/pdfreader",
   "version": "0.1.58",
   "description": "Easiest way to display and interact with PDFs from your web app.",
-  "main": "dist/pdfreader.cjs",
-  "types": "dist/src/index.d.ts",
+  "main": "dist/pdfreader.cjs.js",
+  "types": "dist/index.d.ts",
   "type": "module",
   "exports": {
-    "require": "./dist/pdfreader.cjs",
-    "import": "./dist/pdfreader.js",
-    "types": "./dist/src/index.d.ts"
+    "require": "./dist/pdfreader.cjs.js",
+    "import": "./dist/pdfreader.es.js",
+    "types": "./dist/index.d.ts"
   },
   "files": [
     "dist"
   ],
   "scripts": {
     "test": "test-storybook",
-    "build": "vite build && tsc --emitDeclarationOnly --declaration && tsc-alias",
+    "build": "vite build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test:browser": "vitest --workspace=vitest.workspace.ts"
@@ -36,9 +36,11 @@
     "@storybook/react-vite": "^8.2.3",
     "@storybook/test": "^8.2.3",
     "@storybook/test-runner": "^0.19.1",
-    "@storybook/theming": "^8.2.6",
+    "@storybook/theming": "^8.6.14",
     "@testing-library/react": "^16.0.0",
     "@types/eslint__js": "^8.42.3",
+    "@types/react": "^19.1.5",
+    "@types/react-dom": "^19.1.5",
     "@uidotdev/usehooks": "^2.4.1",
     "@use-gesture/react": "^10.3.1",
     "@vitejs/plugin-react": "^4.3.1",
@@ -49,7 +51,8 @@
     "pdfjs-dist": "^4.4.168",
     "playwright": "^1.45.3",
     "prettier": "^3.3.2",
-    "react": "^18.3.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "storybook": "^8.2.3",
     "tsc-alias": "^1.8.10",
     "tslib": "^2.6.3",
@@ -62,6 +65,7 @@
     "webdriverio": "^8.39.1"
   },
   "peerDependencies": {
-    "react": ">=18 <20"
+    "react": ">=18 <20",
+    "react-dom": ">=18 <20"
   }
 }

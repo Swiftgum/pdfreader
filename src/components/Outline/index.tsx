@@ -46,7 +46,7 @@ export const OutlineItem: FunctionComponent<OutlineItemProps> = ({
       return;
     }
 
-    getDestinationPage(item.dest).then((page) => {
+    getDestinationPage(item.dest).then((page: number | undefined) => {
       if (!page) {
         return;
       }

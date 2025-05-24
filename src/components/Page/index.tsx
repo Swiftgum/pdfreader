@@ -1,6 +1,6 @@
 import { usePDFPageContext, PDFPageContext } from "@/lib/pdf/page";
 import { usePageViewport } from "@/lib/viewport";
-import { HTMLProps, ReactNode, useRef } from "react";
+import { HTMLProps, ReactNode, useRef, RefObject } from "react";
 import { Primitive } from "../Primitive";
 
 export const Page = ({
@@ -15,7 +15,7 @@ export const Page = ({
   const pageContainerRef = useRef<HTMLDivElement>(null);
   const { ready, context } = usePDFPageContext(pageNumber);
 
-  usePageViewport({ pageContainerRef, pageNumber });
+  usePageViewport({ pageContainerRef: pageContainerRef as RefObject<HTMLDivElement>, pageNumber });
 
   return (
     <PDFPageContext.Provider value={context}>

@@ -37,10 +37,10 @@ export const useDPR = () => {
   return dpr;
 };
 
-export const useVisibility = ({
+export const useVisibility = <T extends HTMLElement>({
   elementRef,
 }: {
-  elementRef: RefObject<HTMLElement>;
+  elementRef: RefObject<T | null>;
 }) => {
   const [visible, setVisible] = useState(false);
 

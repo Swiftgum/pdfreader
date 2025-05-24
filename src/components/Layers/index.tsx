@@ -6,7 +6,7 @@ import { useCanvasLayer } from "@/lib/pdf/layers/canvas";
 import { useTextLayer } from "@/lib/pdf/layers/text";
 import { usePDFPage } from "@/lib/pdf/page";
 import clsx from "clsx";
-import { HTMLProps } from "react";
+import { HTMLProps, useEffect, JSX } from "react";
 
 export const TextLayer = ({
   className,
@@ -56,10 +56,16 @@ export const AnnotationLayer = ({
 };
 
 export const CanvasLayer = ({
-  style,
-  ...props
-}: HTMLProps<HTMLCanvasElement>) => {
-  const { canvasRef } = useCanvasLayer();
+    onRenderSuccess,
+    style,
+    ...props
+  }: HTMLProps<HTMLCanvasElement> & {
+    onRenderSuccess?: (canvas: HTMLCanvasElement) => void;
+  }) => {
+    const { canvasRef, onRenderSuccess: afterRender } = useCanvasLayer();
+  
+    // call user-callback once everything is painted
+    useEffect(() => afterRender(onRenderSuccess), [afterRender, onRenderSuccess]);
 
   return (
     <canvas

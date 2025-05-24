@@ -1,7 +1,7 @@
 import { usePDFDocument } from "@/lib/pdf/document";
 import { cloneElement, ReactElement } from "react";
 
-export const Pages = ({ children }: { children: ReactElement }) => {
+export const Pages = ({ children }: { children: ReactElement<{ pageNumber?: number }> }) => {
   const { pdfDocumentProxy } = usePDFDocument();
 
   return (

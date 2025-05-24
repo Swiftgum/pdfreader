@@ -15,7 +15,7 @@ export const useThumbnail = (
   const { pdfDocumentProxy } = usePDFDocument();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dpr = useDPR();
-  const { visible } = useVisibility({ elementRef: canvasRef });
+  const { visible } = useVisibility<HTMLCanvasElement>({ elementRef: canvasRef });
   const debouncedVisible = useDebounce(visible, 100);
 
   const { maxHeight, maxWidth } = Object.assign(

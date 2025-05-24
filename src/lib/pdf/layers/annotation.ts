@@ -54,6 +54,7 @@ export const useAnnotationLayer = (params: AnnotationLayerParams) => {
       accessibilityManager: undefined,
       annotationCanvasMap: undefined,
       annotationEditorUIManager: undefined,
+      structTreeLayer: undefined,
     };
 
     const annotationLayer = new AnnotationLayer(annotationLayerConfig);

@@ -1,0 +1,11 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+      "declaration": true,
+      "emitDeclarationOnly": true,
+      "declarationDir": "./dist",   // <-- all .d.ts end up here
+      "rootDir": "./src"            // important for correct module paths
+    },
+    "include": ["src"]
+  }
+  

@@ -8,7 +8,7 @@ import {
   PDFLinkServiceContext,
 } from "@/lib/pdf/links";
 import { useViewportContext, ViewportContext } from "@/lib/viewport";
-import { forwardRef, HTMLProps, ReactNode } from "react";
+import { forwardRef, HTMLProps, ReactNode, ForwardedRef } from "react";
 import { Primitive } from "../Primitive";
 
 export const Root = forwardRef(
@@ -22,7 +22,7 @@ export const Root = forwardRef(
       usePDFDocumentParams & {
         loader?: ReactNode;
       },
-    ref,
+    ref: ForwardedRef<HTMLDivElement>,
   ) => {
     const { ready, context, pdfDocumentProxy } = usePDFDocumentContext({
       fileURL,
