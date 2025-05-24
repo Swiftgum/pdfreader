@@ -69,6 +69,7 @@ jobs:
         with:
           tag:  ${{ steps.version.outputs.tag }}
           body: "Release ${{ steps.version.outputs.tag }}. Check it out on [NPM ➡️](https://www.npmjs.com/package/@swiftgum/pdfreader/v/${{ steps.version.outputs.tag }})."
+          allowUpdates: true
 
       # ----- npm publish (skipped under act) -----
       - if: ${{ !env.ACT }}
