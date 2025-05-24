@@ -2,19 +2,18 @@ name: Build and Publish
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
     permissions:
       contents: write
       pages: write
       id-token: write
+
     steps:
+      # ---------- auth & checkout ----------
       - uses: actions/create-github-app-token@v1
         id: app-token
         with:
@@ -25,41 +24,46 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
 
+      # ---------- Node & pnpm ----------
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          registry-url: "https://registry.npmjs.org"
-          cache-dependency-path: ./package-lock.json
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+          cache-dependency-path: pnpm-lock.yaml   # <-- no "./"
 
-      - run: npm ci
-        working-directory: .
-      - run: npm run build
-        working-directory: .
-      #- run: npm test
-      #  working-directory: .
-      - run: git config --global user.email "contact@swiftgum.com"
-      - run: git config --global user.name "github-actions[bot]"
+      - uses: pnpm/action-setup@v4              # installs pnpm CLI
+        with:
+          version: 9          # or "latest"
+          run_install: false  # we run install ourselves
+
+      # ---------- install & build ----------
+      - run: pnpm install --frozen-lockfile      # single, reliable install
+      - run: pnpm run build                      # vite/tsc build
+      - run: pnpm run build-storybook            # produce storybook-static
+
+      # ---------- git / version bump ----------
+      - run: |
+          git config --global user.email "contact@swiftgum.com"
+          git config --global user.name "github-actions[bot]"
       - run: |
           tag=$(npm version patch -m 'Bump version to %s [skip ci]')
-          tag_without_v=${tag#v}
-          echo "tag=$tag_without_v" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag#v}" >> "$GITHUB_OUTPUT"
         id: version
-        working-directory: .
+
+      # ---------- release & publish ----------
       - uses: ncipollo/release-action@v1
         with:
           tag: ${{ steps.version.outputs.tag }}
           body: "Release ${{ steps.version.outputs.tag }}. Check it out on [NPM ➡️](https://www.npmjs.com/package/@swiftgum/pdfreader/v/${{ steps.version.outputs.tag }})."
+
       - run: npm publish --access public
-        working-directory: .
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      #- uses: stefanzweifel/git-auto-commit-action@v5
-      #  with:
-      #    commit_options: "--dry-run --no-verify"
-      #    #commit_message: "Bump version [skip ci]"
-      #    skip_dirty_check: true
-      - run: git push origin
+
+      - run: git push origin --follow-tags
+
+      # ---------- deploy Storybook to GH Pages ----------
       - uses: bitovi/github-actions-storybook-to-github-pages@v1.0.3
         with:
-          path: storybook-static # default: dist/storybook
+          path: storybook-static
