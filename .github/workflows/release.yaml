@@ -7,19 +7,24 @@ on:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages            # for the Storybook deploy action
+
     permissions:
-      contents: write
-      pages: write
-      id-token: write
+      contents: write               # commit + tag
+      pages: write                  # GitHub Pages
+      id-token: write               # npm publish provenance
 
     steps:
-      # ---------- auth & checkout ----------
+      # ---------- auth ----------
       - uses: actions/create-github-app-token@v1
         id: app-token
         with:
-          app-id: ${{ secrets.APP_ID }}
+          app-id:      ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
+      # ---------- checkout ----------
       - uses: actions/checkout@v4
         with:
           token: ${{ steps.app-token.outputs.token }}
@@ -29,41 +34,47 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
           registry-url: https://registry.npmjs.org
-          cache-dependency-path: pnpm-lock.yaml   # <-- no "./"
 
-      - uses: pnpm/action-setup@v4              # installs pnpm CLI
+      - uses: pnpm/action-setup@v4       # installs the pnpm CLI
         with:
-          version: 9          # or "latest"
-          run_install: false  # we run install ourselves
+          version: 9                     # pin or use "latest"
+          run_install: false             # we install in the next step
 
       # ---------- install & build ----------
-      - run: pnpm install --frozen-lockfile      # single, reliable install
-      - run: pnpm run build                      # vite/tsc build
-      - run: pnpm run build-storybook            # produce storybook-static
+      - run: pnpm install --frozen-lockfile
 
-      # ---------- git / version bump ----------
+      - run: pnpm run build              # vite + tsc
+
+      - run: pnpm run build-storybook    # outputs ./storybook-static
+
+      # ---------- git identity ----------
       - run: |
           git config --global user.email "contact@swiftgum.com"
-          git config --global user.name "github-actions[bot]"
-      - run: |
+          git config --global user.name  "github-actions[bot]"
+
+      # ---------- version bump ----------
+      - id: version
+        run: |
           tag=$(npm version patch -m 'Bump version to %s [skip ci]')
           echo "tag=${tag#v}" >> "$GITHUB_OUTPUT"
-        id: version
 
-      # ---------- release & publish ----------
+      # ---------- GitHub Release ----------
       - uses: ncipollo/release-action@v1
         with:
-          tag: ${{ steps.version.outputs.tag }}
+          tag:  ${{ steps.version.outputs.tag }}
           body: "Release ${{ steps.version.outputs.tag }}. Check it out on [NPM ➡️](https://www.npmjs.com/package/@swiftgum/pdfreader/v/${{ steps.version.outputs.tag }})."
 
+      # ---------- npm publish ----------
       - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      # ---------- push commit + tag ----------
       - run: git push origin --follow-tags
 
-      # ---------- deploy Storybook to GH Pages ----------
+      # ---------- deploy Storybook to GitHub Pages ----------
       - uses: bitovi/github-actions-storybook-to-github-pages@v1.0.3
         with:
           path: storybook-static
