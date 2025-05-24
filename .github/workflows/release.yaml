@@ -83,6 +83,9 @@ jobs:
 
       # ----- deploy Storybook (skipped under act) -----
       - if: ${{ !env.ACT }}
-        uses: bitovi/github-actions-storybook-to-github-pages@v1.0.3
-        with:
-          path: storybook-static
+        - uses: bitovi/github-actions-storybook-to-github-pages@v1.0.3
+          with:
+            checkout: false                         # we already ran checkout earlier
+            path: storybook-static                  # folder we built a few steps above
+            install_command: pnpm install --frozen-lockfile
+            build_command: pnpm run build-storybook
