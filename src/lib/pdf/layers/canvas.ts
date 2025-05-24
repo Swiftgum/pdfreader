@@ -1,11 +1,11 @@
 import { useDebounce } from "@uidotdev/usehooks";
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 
 import { useDPR, useViewport, useVisibility } from "@/lib/viewport";
 
 import { usePDFPage } from "../page";
 
-export const useCanvasLayer = () => {
+export const useCanvasLayer = (onRendered?: (canvas: HTMLCanvasElement) => void) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { pdfPageProxy } = usePDFPage();
   const dpr = useDPR();
@@ -53,12 +53,30 @@ export const useCanvasLayer = () => {
     };
   }, [pdfPageProxy, canvasRef.current, dpr, debouncedVisible, zoom]);
 
-    /** `render()` has finished – return the canvas to the caller */
-  const onRenderSuccess = (cb?: (canvas: HTMLCanvasElement) => void) => {
-    if (!cb) return;
-    const canvas = canvasRef.current;
-    if (canvas) cb(canvas);
-  };
 
-  return { canvasRef, onRenderSuccess };
+  /** ---------- callback handling ---------- */
+  const cbRef = useRef<typeof onRendered>(() => {});
+  // always keep the latest function in the ref
+  useEffect(() => {
+    cbRef.current = onRendered;
+  }, [onRendered]);
+
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // fire once
+    cbRef.current?.(canvas);
+
+    // fire on every resize / zoom
+    const ro = new ResizeObserver(() => cbRef.current?.(canvas));
+    ro.observe(canvas);
+
+    return () => ro.disconnect();
+  }, []);                 // 👈 empty dependency array → runs once per canvas
+
+  return { canvasRef };
+
+  
+    return { canvasRef };
 };

@@ -56,27 +56,24 @@ export const AnnotationLayer = ({
 };
 
 export const CanvasLayer = ({
-    onRenderSuccess,
-    style,
-    ...props
-  }: HTMLProps<HTMLCanvasElement> & {
-    onRenderSuccess?: (canvas: HTMLCanvasElement) => void;
-  }) => {
-    const { canvasRef, onRenderSuccess: afterRender } = useCanvasLayer();
-  
-    // call user-callback once everything is painted
-    useEffect(() => afterRender(onRenderSuccess), [afterRender, onRenderSuccess]);
+  onRenderSuccess,
+  style,
+  ...props
+}: HTMLProps<HTMLCanvasElement> & {
+  onRenderSuccess?: (canvas: HTMLCanvasElement) => void;
+}) => {
+  const { canvasRef } = useCanvasLayer(onRenderSuccess);
 
   return (
     <canvas
+      {...props}
+      ref={canvasRef}
       style={{
-        ...style,
         position: "absolute",
         top: 0,
         left: 0,
+        ...style,
       }}
-      {...props}
-      ref={canvasRef}
     />
   );
 };

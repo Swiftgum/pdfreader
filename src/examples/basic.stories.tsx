@@ -18,7 +18,7 @@ import {
   Viewport,
 } from "@/components";
 import { CurrentZoom, ZoomIn, ZoomOut } from "@/components/Controls/Zoom";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import clsx from "clsx";
 import { usePDFDocumentParams } from "@/lib/pdf/document";
 import { HTMLProps, ReactNode } from "react";
@@ -435,30 +435,44 @@ export const WithCanvasMetrics: Story = {
   render: ({ fileURL }: { fileURL: string }) => {
     const [size, setSize] = useState<{ w: number; h: number } | null>(null);
 
+    const handleRender = useCallback((canvas: HTMLCanvasElement) => {
+      setSize({ w: canvas.clientWidth, h: canvas.clientHeight });
+    }, []);
+
     return (
       <Root
         fileURL={fileURL}
         className="bg-gray-100 border rounded-md overflow-hidden relative h-[500px] flex flex-col"
         loader={<div className="p-4">Loading…</div>}
       >
-        {/* Tiny banner that prints the measured size */}
-        <div className="text-xs text-gray-700 bg-white/70 border-b px-3 py-1">
+        {/* --- Toolbar -------------------------------------------------- */}
+        <div className="text-xs text-gray-700 bg-white/70 border-b px-3 py-1 flex items-center gap-2">
           Canvas&nbsp;size:&nbsp;
           {size ? `${size.w}px × ${size.h}px` : "—"}
+          <span className="flex-grow" />
+          <ZoomOut className="px-2 select-none">−</ZoomOut>
+          <CurrentZoom className="w-14 text-center bg-white border rounded-md px-1 py-0.5" />
+          <ZoomIn className="px-2 select-none">+</ZoomIn>
         </div>
 
+        {/* --- CLEAR DEBUG READ-OUT ------------------------------------ */}
+        <div className="text-center text-sm py-1 bg-yellow-100 border-b">
+          <strong>Current canvas size:</strong>{" "}
+          {size ? (
+            <>
+              <span className="font-mono">{size.w}</span> px&nbsp;×&nbsp;
+              <span className="font-mono">{size.h}</span> px
+            </>
+          ) : (
+            "— awaiting first render —"
+          )}
+        </div>
+
+        {/* --- Viewer --------------------------------------------------- */}
         <Viewport className="flex-1 p-4 overflow-auto">
           <Pages>
             <Page className="shadow-md my-4">
-              <CanvasLayer
-                /* 🆕 The magic happens here */
-                onRenderSuccess={(canvas) =>
-                  setSize({
-                    w: canvas.clientWidth,
-                    h: canvas.clientHeight,
-                  })
-                }
-              />
+              <CanvasLayer onRenderSuccess={handleRender} />
               <TextLayer />
             </Page>
           </Pages>
@@ -466,5 +480,6 @@ export const WithCanvasMetrics: Story = {
       </Root>
     );
   },
+
   args: { fileURL: "brochure.pdf" },
 };
