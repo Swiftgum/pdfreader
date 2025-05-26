@@ -550,3 +550,25 @@ export const CanvasLoaded_TextDelayed: Story = {
   },
   args: { fileURL: "brochure.pdf" },
 };
+
+export const Page3: Story = {
+  args: {
+    fileURL: "brochure.pdf",   // served from /static as before
+    initialPage: 3,            // ← NEW!
+    className: "bg-gray-100 border rounded-md h-[500px] overflow-hidden",
+  },
+
+  render: ({ fileURL, initialPage, className }) => (
+    <Root fileURL={fileURL} initialPage={initialPage} className={className}>
+      <Viewport className="p-4 h-full">
+        <Pages>
+          <Page className="my-4 shadow-md rounded-md overflow-hidden">
+            <CanvasLayer />
+            <TextLayer />
+            <AnnotationLayer />
+          </Page>
+        </Pages>
+      </Viewport>
+    </Root>
+  ),
+};
