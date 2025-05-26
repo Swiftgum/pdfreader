@@ -9,6 +9,7 @@ import { Pages } from "./Pages";
 import { CurrentPage, TotalPages } from "./Controls/PageNumber";
 import { CurrentZoom, ZoomIn, ZoomOut } from "./Controls/Zoom";
 import { Thumbnail, Thumbnails } from "./Thumbnails";
+import "@/styles/tailwind.css";
 
 export const Debug = () => {
   const { zoom, translateX, translateY, currentPage } = useViewport();

@@ -8,35 +8,49 @@ export const Page = ({
   pageNumber = 1,
   style,
   ...props
-}: HTMLProps<HTMLDivElement> & {
-  children: ReactNode;
-  pageNumber?: number;
-}) => {
+}: HTMLProps<HTMLDivElement> & { children: ReactNode; pageNumber?: number }) => {
   const pageContainerRef = useRef<HTMLDivElement>(null);
   const { ready, context } = usePDFPageContext(pageNumber);
 
-  usePageViewport({ pageContainerRef: pageContainerRef as RefObject<HTMLDivElement>, pageNumber });
+  usePageViewport({
+    pageContainerRef: pageContainerRef as RefObject<HTMLDivElement>,
+    pageNumber,
+  });
+
+  /* fallback A-series ratio for the shimmer */
+  const fallbackW = 240;
+  const fallbackH = Math.round(fallbackW * 1.414);
+
+  /* only touch pdfPageProxy *after* it’s ready */
+  const view = ready ? context.pdfPageProxy.view : [0, 0, fallbackW, fallbackH];
+  const [x0, , x1, y1] = view;
+  const pageWidth = x1 - x0;
+  const pageHeight = y1;
 
   return (
     <PDFPageContext.Provider value={context}>
-      <Primitive.div
-        ref={pageContainerRef}
-        style={{
-          display: ready ? "block" : "none",
-        }}
-      >
+      <Primitive.div ref={pageContainerRef}
+        className={!ready ? "flex items-center justify-center" : undefined}
+>
+        {/** ---------- LOADING ---------- */}
+        {!ready && (
+          <div
+            className="pdf-skeleton rounded-[2px]"
+            style={{ width: pageWidth, height: pageHeight }}
+          />
+        )}
+
+        {/** ---------- REAL PAGE ---------- */}
         {ready && (
           <div
-            style={
-              {
-                ...style,
-                "--scale-factor": 1,
-                position: "relative",
-                width: `${context.pdfPageProxy.view[2] - context.pdfPageProxy.view[0]}px`,
-                height: `${context.pdfPageProxy.view[3] - context.pdfPageProxy.view[1]}px`,
-              } as React.CSSProperties
-            }
             {...props}
+            style={{
+              ...(style as React.CSSProperties),
+              position: "relative",
+              width: pageWidth,
+              height: pageHeight,
+              ["--scale-factor" as any]: 1,
+            }}
           >
             {children}
           </div>
@@ -45,3 +59,4 @@ export const Page = ({
     </PDFPageContext.Provider>
   );
 };
+

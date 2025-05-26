@@ -18,7 +18,7 @@ import {
   Viewport,
 } from "@/components";
 import { CurrentZoom, ZoomIn, ZoomOut } from "@/components/Controls/Zoom";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import clsx from "clsx";
 import { usePDFDocumentParams } from "@/lib/pdf/document";
 import { HTMLProps, ReactNode } from "react";
@@ -41,7 +41,7 @@ export const Basic: Story = {
     <Root
       fileURL="brochure.pdf"
       className="bg-gray-100 border rounded-md overflow-hidden relative h-[500px]"
-      loader={<div className="p-4">Loading...</div>}
+
     >
       <Viewport className="p-4 h-full">
         <Pages>
@@ -59,7 +59,7 @@ export const WithTextLayer: Story = {
     <Root
       fileURL={fileURL}
       className="bg-gray-100 border rounded-md overflow-hidden relative h-[500px]"
-      loader={<div className="p-4">Loading...</div>}
+
     >
       <Viewport className="p-4 h-full">
         <Pages>
@@ -81,7 +81,7 @@ export const WithInternalLinks: Story = {
     <Root
       fileURL={fileURL}
       className="bg-gray-100 border rounded-md overflow-hidden relative h-[500px]"
-      loader={<div className="p-4">Loading...</div>}
+
     >
       <Viewport className="p-4 h-full">
         <Pages>
@@ -104,7 +104,7 @@ export const WithAnnotationLayer: Story = {
     <Root
       fileURL={fileURL}
       className="bg-gray-100 border rounded-md overflow-hidden relative h-[500px]"
-      loader={<div className="p-4">Loading...</div>}
+
     >
       <Viewport className="p-4 h-full">
         <Pages>
@@ -127,7 +127,7 @@ export const WithFormControls: Story = {
     <Root
       fileURL={fileURL}
       className="bg-gray-100 border rounded-md overflow-hidden relative h-[500px]"
-      loader={<div className="p-4">Loading...</div>}
+
     >
       <Viewport className="p-4 h-full">
         <Pages>
@@ -150,7 +150,7 @@ export const WithPageControl: Story = {
     <Root
       fileURL={fileURL}
       className="bg-gray-100 border rounded-md overflow-hidden relative h-[500px] flex flex-col justify-stretch"
-      loader={<div className="p-4">Loading...</div>}
+
     >
       <div className="bg-gray-100 border-b p-1 flex items-center justify-center text-sm text-gray-600 gap-2">
         Page
@@ -177,7 +177,7 @@ export const WithZoomControl: Story = {
     <Root
       fileURL={fileURL}
       className="bg-gray-100 border rounded-md overflow-hidden relative h-[500px] flex flex-col justify-stretch"
-      loader={<div className="p-4">Loading...</div>}
+
     >
       <div className="bg-gray-100 border-b p-1 flex items-center justify-center text-sm text-gray-600 gap-2">
         Zoom
@@ -209,7 +209,7 @@ export const WithOutline: Story = {
       <Root
         fileURL={fileURL}
         className="bg-gray-100 border rounded-md overflow-hidden relative h-[500px] flex flex-col justify-stretch"
-        loader={<div className="p-4">Loading...</div>}
+  
       >
         <div className="bg-gray-100 border-b p-1 flex items-center justify-center text-sm text-gray-600 gap-2">
           <button
@@ -269,7 +269,7 @@ export const WithThumbnails: Story = {
       <Root
         fileURL={fileURL}
         className="bg-gray-100 border rounded-md overflow-hidden relative h-[500px] flex flex-col justify-stretch"
-        loader={<div className="p-4">Loading...</div>}
+  
       >
         <div className="bg-gray-100 border-b p-1 flex items-center justify-center text-sm text-gray-600 gap-2">
           <button
@@ -324,7 +324,7 @@ export const WithCustomLayer: Story = {
     <Root
       fileURL={fileURL}
       className="bg-gray-100 border rounded-md overflow-hidden relative h-[500px]"
-      loader={<div className="p-4">Loading...</div>}
+
     >
       <Viewport className="p-4 h-full">
         <Pages>
@@ -366,7 +366,7 @@ export const WithCustomFormLayer: Story = {
       <Root
         fileURL={fileURL}
         className="bg-gray-100 border rounded-md overflow-hidden relative h-[500px]"
-        loader={<div className="p-4">Loading...</div>}
+  
       >
         <Viewport className="p-4 h-full">
           <Pages>
@@ -412,7 +412,7 @@ export const WithPDFFormValues: Story = {
       <Root
         fileURL={fileURL}
         className="bg-gray-100 border rounded-md overflow-hidden relative h-[500px]"
-        loader={<div className="p-4">Loading...</div>}
+  
       >
         <Viewport className="p-4 h-full">
           <Pages>
@@ -481,5 +481,72 @@ export const WithCanvasMetrics: Story = {
     );
   },
 
+  args: { fileURL: "brochure.pdf" },
+};
+
+
+export const SkeletonPlaceholder: Story = {
+  name: "With skeleton (1.5 s delay)",
+  argTypes: {
+    delay: { control: { type: "number", min: 0, max: 5000, step: 250 } },
+  },
+  args: { delay: 150000, fileURL: "brochure.pdf" },
+
+  render: ({ delay, fileURL }: { delay: number; fileURL: string }) => {
+    const [url, setUrl] = useState<string>("data:,");
+
+    useEffect(() => {
+      const id = setTimeout(() => setUrl(fileURL), delay);
+      return () => clearTimeout(id);
+    }, [delay, fileURL]);
+
+    return (
+      <Root
+        fileURL={url}
+        /* 👇 use the same skeleton in Root’s loader */
+        loader={
+          <div
+            role="status"
+            className="pdf-skeleton rounded-[2px]"
+            style={{ width: 240, height: 240 * 1.414 }}
+          />
+        }
+        className="bg-gray-100 border rounded-md overflow-hidden relative h-[500px]"
+      >
+        <Viewport className="p-4 h-full">
+          <Pages>
+            <Page className="my-4">
+              <CanvasLayer />
+            </Page>
+          </Pages>
+        </Viewport>
+      </Root>
+    );
+  },
+};
+
+
+export const CanvasLoaded_TextDelayed: Story = {
+  name: "Canvas ready · text 2 s later",
+  render: ({ fileURL }) => {
+    const [delayDone, setDelayDone] = useState(false);
+    useEffect(() => {
+      const id = setTimeout(() => setDelayDone(true), 20000);
+      return () => clearTimeout(id);
+    }, []);
+
+    return (
+      <Root fileURL={fileURL} className="bg-gray-100 border rounded-md h-[500px]">
+        <Viewport className="p-4">
+          <Pages>
+            <Page className="shadow-md">
+              <CanvasLayer />
+              {delayDone && <TextLayer />}   {/* mount text layer 2 s later */}
+            </Page>
+          </Pages>
+        </Viewport>
+      </Root>
+    );
+  },
   args: { fileURL: "brochure.pdf" },
 };

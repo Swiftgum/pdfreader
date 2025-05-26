@@ -1,0 +1,63 @@
+/* src/styles/tailwind.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .pdf-skeleton {
+    /* only two utilities that ARE allowed in @apply */
+    @apply relative overflow-hidden;
+    margin: auto;            /* ← shorthand for margin-block/inline */
+    /* hard-coded fill colour */
+    background-color: rgb(226 232 240 / 0.70);   /* slate-200 @ 70 % */
+  }
+
+  .pdf-skeleton::before {
+    content: "";
+
+    /* only the utilities that compile inside @apply */
+    @apply absolute -translate-x-full;
+
+    /* 👇 use plain CSS for the edges and transform-origin */
+    inset: 0;                    /* top:0;right:0;bottom:0;left:0 */
+    transform-origin: 0 0;       /* keep the slide direction */
+
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(255 255 255 / 0.60) 50%,
+      transparent 100%
+    );
+
+    animation: pdf-shimmer 0.8s linear infinite;
+  }
+
+  @keyframes pdf-shimmer {
+    100% { transform: translateX(100%); }
+  }
+}
+
+
+@layer utilities {
+  .pdf-text-skeleton {
+    height: 0.75rem;                     /* ≈ 12 px */
+    border-radius: 2px;
+    background-color: rgb(226 232 240 / 0.70);   /* slate-200 70 % */
+    position: relative;
+    overflow: hidden;
+  }
+  .pdf-text-skeleton::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(255 255 255 / 0.60) 50%,
+      transparent 100%
+    );
+    animation: pdf-shimmer 0.8s linear infinite;
+  }
+  /* reuse the same keyframes you already declared */
+}

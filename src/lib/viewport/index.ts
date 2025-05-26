@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { usePDFPageContext } from "../pdf/page";
 
 export const useDPR = () => {
   const [dpr, setDPR] = useState(
@@ -479,15 +480,23 @@ export const usePageViewport = ({
   pageContainerRef: RefObject<HTMLDivElement>;
   pageNumber: number;
 }) => {
+  const { ready } = usePDFPageContext(pageNumber);
   const { visible } = useVisibility({ elementRef: pageContainerRef });
-
   const { setPageRef, setPageVisible } = useViewport();
 
+  /* -------------------------------------------------------------
+     1. Register the ref as soon as we have one (independent of ready)
+     -------------------------------------------------------------*/
   useEffect(() => {
-    setPageVisible(pageNumber, visible ? 1 : 0);
-  }, [visible, pageNumber]);
-
-  useEffect(() => {
+    if (!pageContainerRef.current) return;
     setPageRef(pageNumber, pageContainerRef);
-  }, [pageNumber, pageContainerRef.current]);
+  }, [pageNumber, pageContainerRef, setPageRef]);
+
+  /* -------------------------------------------------------------
+     2. Update visibility only when the page is decoded AND visible
+     -------------------------------------------------------------*/
+  useEffect(() => {
+    if (!ready) return;                   // guard INSIDE the hook
+    setPageVisible(pageNumber, visible ? 1 : 0);
+  }, [ready, visible, pageNumber, setPageVisible]);
 };

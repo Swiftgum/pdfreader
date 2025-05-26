@@ -44,7 +44,14 @@ export const Root = forwardRef(
             </ViewportContext.Provider>
           </PDFDocumentContext.Provider>
         ) : (
-          loader || "Loading..."
+          loader || (
+            <div className="grid place-items-center h-full">
+            <div
+              className="pdf-skeleton rounded-[2px]"
+              style={{ width: 240, height: 240 * 1.414 }}
+            />
+          </div>
+          )
         )}
       </Primitive.div>
     );
