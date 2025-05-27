@@ -548,12 +548,12 @@ export const CanvasLoaded_TextDelayed: Story = {
       </Root>
     );
   },
-  args: { fileURL: "brochure.pdf" },
+  args: { fileURL: "projet_de_bail.pdf" },
 };
 
 export const Page3: Story = {
   args: {
-    fileURL: "brochure.pdf",   // served from /static as before
+    fileURL: "projet_de_bail.pdf",   // served from /static as before
     initialPage: 3,            // ← NEW!
     className: "bg-gray-100 border rounded-md h-[500px] overflow-hidden",
   },

@@ -1,15 +1,15 @@
 /* ------------------------------------------------------------------
    src/components/Root/index.tsx
    ------------------------------------------------------------------ */
-   import {
-    usePDFDocumentParams,
-    usePDFDocumentContext,
-    PDFDocumentContext,
-  } from "@/lib/pdf/document";
-  import {
-    useCreatePDFLinkService,
-    PDFLinkServiceContext,
-  } from "@/lib/pdf/links";
+import {
+  usePDFDocumentParams,
+  usePDFDocumentContext,
+  PDFDocumentContext,
+} from "@/lib/pdf/document";
+import {
+  useCreatePDFLinkService,
+  PDFLinkServiceContext,
+} from "@/lib/pdf/links";
   import {
     useViewportContext,
     ViewportContext,
@@ -17,8 +17,8 @@
   
   import type { ForwardedRef, HTMLProps, ReactNode } from "react";
   import { forwardRef, useEffect } from "react";
-  import { Primitive } from "../Primitive";
-  
+import { Primitive } from "../Primitive";
+
   /* ------------------------------------------------------------------ */
   /*  Public props                                                      */
   /* ------------------------------------------------------------------ */
@@ -35,28 +35,28 @@
   /*  Component                                                         */
   /* ------------------------------------------------------------------ */
   export const Root = forwardRef<HTMLDivElement, PDFReaderProps>(
-    (
-      {
-        children,
-        fileURL,
-        loader,
+  (
+    {
+      children,
+      fileURL,
+      loader,
         initialPage = 1,
-        ...props
+      ...props
       },
       ref: ForwardedRef<HTMLDivElement>,
-    ) => {
+  ) => {
       /* ---------- load the document ---------------------------------- */
-      const { ready, context, pdfDocumentProxy } = usePDFDocumentContext({
-        fileURL,
-      });
+    const { ready, context, pdfDocumentProxy } = usePDFDocumentContext({
+      fileURL,
+    });
   
       /* ---------- viewport & links services -------------------------- */
-      const viewportContext = useViewportContext({});
-      const linkService = useCreatePDFLinkService(
-        pdfDocumentProxy,
-        viewportContext,
-      );
-  
+    const viewportContext = useViewportContext({});
+    const linkService = useCreatePDFLinkService(
+      pdfDocumentProxy,
+      viewportContext,
+    );
+
       /* ---------- once ready → jump to requested page ---------------- */
       useEffect(() => {
         if (!ready) return;
@@ -73,17 +73,17 @@
       }, [ready, initialPage, viewportContext, pdfDocumentProxy]);
   
       /* ---------- render --------------------------------------------- */
-      return (
-        <Primitive.div ref={ref} {...props}>
-          {ready ? (
-            <PDFDocumentContext.Provider value={context}>
-              <ViewportContext.Provider value={viewportContext}>
-                <PDFLinkServiceContext.Provider value={linkService}>
-                  {children}
-                </PDFLinkServiceContext.Provider>
-              </ViewportContext.Provider>
-            </PDFDocumentContext.Provider>
-          ) : (
+    return (
+      <Primitive.div ref={ref} {...props}>
+        {ready ? (
+          <PDFDocumentContext.Provider value={context}>
+            <ViewportContext.Provider value={viewportContext}>
+              <PDFLinkServiceContext.Provider value={linkService}>
+                {children}
+              </PDFLinkServiceContext.Provider>
+            </ViewportContext.Provider>
+          </PDFDocumentContext.Provider>
+        ) : (
             /* fallback skeleton if caller didn't supply one ------------- */
             loader ?? (
               <div className="grid place-items-center h-full">
@@ -93,11 +93,10 @@
                 />
               </div>
             )
-          )}
-        </Primitive.div>
-      );
-    },
-  );
+        )}
+      </Primitive.div>
+    );
+  },
+);
   
   Root.displayName = "PDFReader.Root";
-  
