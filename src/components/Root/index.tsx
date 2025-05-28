@@ -1,27 +1,33 @@
 /* ------------------------------------------------------------------
    src/components/Root/index.tsx
    ------------------------------------------------------------------ */
+
    import {
+    /* document helpers */
     usePDFDocumentParams,
     usePDFDocumentContext,
     PDFDocumentContext,
   } from "@/lib/pdf/document";
   import {
+    /* link-service helpers */
     useCreatePDFLinkService,
     PDFLinkServiceContext,
   } from "@/lib/pdf/links";
   import {
+    /* viewport helpers */
     useViewportContext,
     ViewportContext,
   } from "@/lib/viewport";
   
   import type { ForwardedRef, HTMLProps, ReactNode } from "react";
-  import { forwardRef, useEffect } from "react";
+  import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
   import { Primitive } from "../Primitive";
   
   /* ------------------------------------------------------------------ */
-  /*  Public props                                                      */
+  /*  Public types & props                                              */
   /* ------------------------------------------------------------------ */
+  
+  /** External props (unchanged) */
   export interface PDFReaderProps
     extends HTMLProps<HTMLDivElement>,
       usePDFDocumentParams {
@@ -32,10 +38,21 @@
     initialPage?: number;
   }
   
+  /** What callers can do with `ref` */
+  export interface PDFReaderHandle {
+    /**
+     * Scroll to a 1-based page.
+     * @param page  1 … numPages
+     * @param opts  `{ smooth?: boolean }`  (default = `true`)
+     */
+    scrollToPage(page: number, opts?: { smooth?: boolean }): void;
+  }
+  
   /* ------------------------------------------------------------------ */
   /*  Component                                                         */
   /* ------------------------------------------------------------------ */
-  export const Root = forwardRef<HTMLDivElement, PDFReaderProps>(
+  
+  export const Root = forwardRef<PDFReaderHandle, PDFReaderProps>(
     (
       {
         children,
@@ -44,7 +61,7 @@
         initialPage = 1,
         ...props
       },
-      ref: ForwardedRef<HTMLDivElement>,
+      ref: ForwardedRef<PDFReaderHandle>,
     ) => {
       /* ---------- load the document ---------------------------------- */
       const { ready, context, pdfDocumentProxy } = usePDFDocumentContext({
@@ -58,11 +75,25 @@
         viewportContext,
       );
   
+      /* ---------- DOM ref (for styling, not exposed) ----------------- */
+      const divRef = useRef<HTMLDivElement>(null);
+  
+      /* ---------- imperative handle ---------------------------------- */
+      useImperativeHandle(
+        ref,
+        () => ({
+          scrollToPage: (page: number, opts = { smooth: true }) => {
+            viewportContext.goToPage?.(page, opts);
+          },
+        }),
+        [viewportContext],
+      );
+  
       /* ---------- once ready → jump to requested page ---------------- */
       useEffect(() => {
         if (!ready) return;
   
-        // guard against out-of-range values
+        // clamp to valid range
         const safePage =
           initialPage < 1
             ? 1
@@ -74,19 +105,18 @@
       }, [ready, initialPage, viewportContext, pdfDocumentProxy]);
   
       /* ---------- render --------------------------------------------- */
-      // 1. Still loading and caller provided a loader → wrap the loader so
-      //    they can still style the outer element via props/ref.
+      // 1 ▸ Still loading and caller provided a loader ➜ wrap it
       if (!ready) {
         return loader ? (
-          <Primitive.div ref={ref} {...props}>
+          <Primitive.div ref={divRef} {...props}>
             {loader}
           </Primitive.div>
-        ) : null; // 2. Still loading & *no* loader → render nothing at all.
+        ) : null; // 2 ▸ Still loading & *no* loader ➜ render nothing
       }
   
-      // 3. Document ready ➜ normal render path
+      // 3 ▸ Document ready ➜ normal render path
       return (
-        <Primitive.div ref={ref} {...props}>
+        <Primitive.div ref={divRef} {...props}>
           <PDFDocumentContext.Provider value={context}>
             <ViewportContext.Provider value={viewportContext}>
               <PDFLinkServiceContext.Provider value={linkService}>
@@ -100,3 +130,4 @@
   );
   
   Root.displayName = "PDFReader.Root";
+  
