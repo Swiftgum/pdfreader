@@ -167,11 +167,23 @@ export const useViewportContext = ({
 
   const setPageVisible = (n: number, percent: number) =>
     setVis(prev => {
-      const next = new Map(prev).set(n, percent);
-      // pick the lowest page number that is > 0 % visible
-      const firstVisible = Math.min(...[...next].filter(([,v])=>v>0).map(([p])=>p));
+      // ────────────────────────────────────────────────────────────────
+      // 1. guard – nothing changed? → return *exactly* the same Map to
+      //    keep React from re-rendering
+      // ────────────────────────────────────────────────────────────────
+      if (prev.get(n) === percent) return prev;
+  
+      // 2. clone & update only when the value really changed
+      const next = new Map(prev);
+      next.set(n, percent);
+  
+      // keep currentPage in sync (first visible page)
+      const firstVisible = Math.min(
+        ...[...next].filter(([, v]) => v > 0).map(([p]) => p),
+      );
       setPage(firstVisible === Infinity ? 1 : firstVisible);
-      return next;
+  
+      return next;             // <- new reference only when necessary
     });
 
   const goToPage = (
