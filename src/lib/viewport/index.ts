@@ -144,100 +144,80 @@ export const useViewportContext = ({
   minZoom = 0.5,
   maxZoom = 5,
   defaultZoom = 1,
-}: ViewportProps) => {
-  const [zoom, setZoom] = useState(defaultZoom);
-  const [translateX, setTranslateX] = useState(0);
-  const [translateY, setTranslateY] = useState(0);
-  const pages = useRef(
+}: ViewportProps): ViewportContextType => {
+  /* ─── reactive state ─────────────────────────────────────────── */
+  const [zoom, _setZoom]         = useState(defaultZoom);
+  const [translateX, setTX]      = useState(0);
+  const [translateY, setTY]      = useState(0);
+  const [visiblePages, setVis]   = useState<Map<number, number>>(new Map());
+  const [currentPage, setPage]   = useState(1);
+
+  /* refs that never change after mount --------------------------- */
+  const pagesRef     = useRef(
     new Map<number, { containerRef: RefObject<HTMLDivElement> }>(),
   );
-  const viewportRef = useRef<HTMLDivElement | null>(null);
-  const [visiblePages, setVisiblePages] = useState(new Map<number, number>());
+  const viewportRef  = useRef<HTMLDivElement | null>(null);
 
-  const [currentPage, setCurrentPage] = useState(1);
+  /* ─── helpers that update state -------------------------------- */
+  const setZoom = (z: number | ((p: number) => number)) =>
+    _setZoom(prev => clamp(typeof z === "function" ? z(prev) : z, minZoom, maxZoom));
 
-  return {
-    zoom,
-    minZoom,
-    maxZoom,
-    setZoom: (zoom) => {
-      setZoom((prevZoom) => {
-        if (typeof zoom === "function") {
-          return clamp(zoom(prevZoom), minZoom, maxZoom);
-        }
-        return clamp(zoom, minZoom, maxZoom);
-      });
-    },
-    translateX,
-    setTranslateX,
-    translateY,
-    setTranslateY,
-    pages: pages.current,
-    visiblePages: visiblePages,
-    setPageRef: (pageNumber, containerRef) => {
-      pages.current.set(pageNumber, { containerRef });
-    },
-    setPageVisible: (pageNumber, percentageVisible) => {
-      setVisiblePages((prevVisiblePages) => {
-        const newVisiblePages = new Map(prevVisiblePages);
-        newVisiblePages.set(pageNumber, percentageVisible);
+  const setPageRef = (n: number, containerRef: RefObject<HTMLDivElement>) =>
+    pagesRef.current.set(n, { containerRef });
 
-        const newCurrentPage = Math.min(
-          ...[...newVisiblePages]
-            .filter(([, visibility]) => visibility > 0)
-            .map(([pageNumber]) => pageNumber),
-        );
+  const setPageVisible = (n: number, percent: number) =>
+    setVis(prev => {
+      const next = new Map(prev).set(n, percent);
+      // pick the lowest page number that is > 0 % visible
+      const firstVisible = Math.min(...[...next].filter(([,v])=>v>0).map(([p])=>p));
+      setPage(firstVisible === Infinity ? 1 : firstVisible);
+      return next;
+    });
 
-        setCurrentPage(newCurrentPage);
+  const goToPage = (
+    n: number,
+    { smooth = true }: { smooth?: boolean } = {},
+  ): boolean => {
+    const page = pagesRef.current.get(n);
+    const vp   = viewportRef.current;
+    if (!page || !vp) return false;
 
-        return newVisiblePages;
-      });
-    },
+    const vpRect   = vp.getBoundingClientRect();
+    const pgRect   = page.containerRef.current!.getBoundingClientRect();
+
+    vp.scrollTo({
+      top:  Math.ceil(vp.scrollTop  + pgRect.top  - vpRect.top),
+      left: Math.ceil(vp.scrollLeft + pgRect.left - vpRect.left),
+      behavior: smooth ? "smooth" : "auto",
+    });
+    return true;
+  };
+
+  /* ─── stable context object (never re-created) ───────────────── */
+  const ctx = useRef<ViewportContextType>({
+    zoom, minZoom, maxZoom,
+    setZoom,
+    translateX, setTranslateX: setTX,
+    translateY, setTranslateY: setTY,
+    pages: pagesRef.current,
+    visiblePages,
+    setPageRef,
+    setPageVisible,
     currentPage,
-    goToPage: (
-      pageNumber: number,
-      { smooth } = {
-        smooth: true,
-      },
-    ) => {
-      const pageRef = pages.current.get(pageNumber);
+    goToPage,
+    setViewportRef: (ref) => { viewportRef.current = ref.current; },
+  }).current;
 
-      if (pageRef && viewportRef.current) {
-        const viewportRefRect = viewportRef.current.getBoundingClientRect();
-        const pageRefRect =
-          pageRef.containerRef.current!.getBoundingClientRect();
+  /* ─── keep mutable fields up-to-date on every render ─────────── */
+  ctx.zoom          = zoom;
+  ctx.translateX    = translateX;
+  ctx.translateY    = translateY;
+  ctx.visiblePages  = visiblePages;
+  ctx.currentPage   = currentPage;
 
-        // TODO: use scroll properties
-        /* pageRef.containerRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "start",
-        }); */
-
-        viewportRef.current.scrollTo({
-          top: Math.ceil(
-            viewportRef.current.scrollTop +
-              pageRefRect.top -
-              viewportRefRect.top,
-          ),
-          left: Math.ceil(
-            viewportRef.current.scrollLeft +
-              pageRefRect.left -
-              viewportRefRect.left,
-          ),
-          behavior: smooth ? "smooth" : "auto",
-        });
-
-        return true;
-      }
-
-      return false;
-    },
-    setViewportRef: (ref) => {
-      viewportRef.current = ref.current;
-    },
-  } satisfies ViewportContextType;
+  return ctx;
 };
+
 
 export const useViewport = () => {
   return useContext(ViewportContext);

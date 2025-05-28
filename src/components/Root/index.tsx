@@ -23,36 +23,20 @@
   import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
   import { Primitive } from "../Primitive";
   
-  /* ------------------------------------------------------------------ */
-  /*  Public types & props                                              */
-  /* ------------------------------------------------------------------ */
-  
-  /** External props (unchanged) */
+  /* ─── public types ──────────────────────────────────────────────── */
   export interface PDFReaderProps
     extends HTMLProps<HTMLDivElement>,
       usePDFDocumentParams {
-    /** Replace the default loader while the file is fetched.            */
-    /** If omitted, nothing at all is rendered until the document is ready. */
-    loader?: ReactNode;
-    /** Page to show as soon as the PDF is ready (1-based, default = 1) */
-    initialPage?: number;
-    onReady?: () => void;
+    loader?: ReactNode;               // optional custom loader
+    initialPage?: number;             // 1-based; default = 1
+    onReady?: () => void;             // fires once when first page shown
   }
   
-  /** What callers can do with `ref` */
   export interface PDFReaderHandle {
-    /**
-     * Scroll to a 1-based page.
-     * @param page  1 … numPages
-     * @param opts  `{ smooth?: boolean }`  (default = `true`)
-     */
     scrollToPage(page: number, opts?: { smooth?: boolean }): void;
   }
   
-  /* ------------------------------------------------------------------ */
-  /*  Component                                                         */
-  /* ------------------------------------------------------------------ */
-  
+  /* ─── component ─────────────────────────────────────────────────── */
   export const Root = forwardRef<PDFReaderHandle, PDFReaderProps>(
     (
       {
@@ -60,41 +44,37 @@
         fileURL,
         loader,
         initialPage = 1,
-        ...props
+        onReady,
+        ...divProps
       },
       ref: ForwardedRef<PDFReaderHandle>,
     ) => {
-      /* ---------- load the document ---------------------------------- */
+      /* load the document ------------------------------------------- */
       const { ready, context, pdfDocumentProxy } = usePDFDocumentContext({
         fileURL,
       });
   
-      /* ---------- viewport & links services -------------------------- */
-      const viewportContext = useViewportContext({});
+      /* viewport & link services ------------------------------------ */
+      const viewportContext = useViewportContext({});          // ↺ hook
       const linkService = useCreatePDFLinkService(
         pdfDocumentProxy,
         viewportContext,
       );
   
-      /* ---------- DOM ref (for styling, not exposed) ----------------- */
-      const divRef = useRef<HTMLDivElement>(null);
-  
-      /* ---------- imperative handle ---------------------------------- */
+      /* expose imperative API --------------------------------------- */
       useImperativeHandle(
         ref,
         () => ({
-          scrollToPage: (page: number, opts = { smooth: true }) => {
-            viewportContext.goToPage?.(page, opts);
-          },
+          scrollToPage: (page, opts = { smooth: true }) =>
+            viewportContext.goToPage?.(page, opts),
         }),
         [viewportContext],
       );
   
-      /* ---------- once ready → jump to requested page ---------------- */
+      /* jump to the requested page once, then signal ready ---------- */
       useEffect(() => {
         if (!ready) return;
   
-        // clamp to valid range
         const safePage =
           initialPage < 1
             ? 1
@@ -103,22 +83,23 @@
             : initialPage;
   
         viewportContext.goToPage?.(safePage, { smooth: false });
-        props.onReady?.();
-      }, [ready, initialPage, viewportContext, pdfDocumentProxy]);
+        onReady?.();                         // notify parent exactly once
+        // ↓ intentionally *not* listing viewportContext here
+      }, [ready, initialPage, pdfDocumentProxy, onReady]);
   
-      /* ---------- render --------------------------------------------- */
-      // 1 ▸ Still loading and caller provided a loader ➜ wrap it
+      /* render ------------------------------------------------------- */
+      const divRef = useRef<HTMLDivElement>(null);
+  
       if (!ready) {
         return loader ? (
-          <Primitive.div ref={divRef} {...props}>
+          <Primitive.div ref={divRef} {...divProps}>
             {loader}
           </Primitive.div>
-        ) : null; // 2 ▸ Still loading & *no* loader ➜ render nothing
+        ) : null;
       }
   
-      // 3 ▸ Document ready ➜ normal render path
       return (
-        <Primitive.div ref={divRef} {...props}>
+        <Primitive.div ref={divRef} {...divProps}>
           <PDFDocumentContext.Provider value={context}>
             <ViewportContext.Provider value={viewportContext}>
               <PDFLinkServiceContext.Provider value={linkService}>
