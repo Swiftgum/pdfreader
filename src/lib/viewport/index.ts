@@ -50,16 +50,21 @@ export const useVisibility = <T extends HTMLElement>({
       return;
     }
 
-    const observer = new IntersectionObserver(([entry]) => {
-      setVisible(entry.isIntersecting);
-    });
-
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      {
+        /* track the viewport that actually scrolls, if there is one */
+        root: elementRef.current?.parentElement ?? undefined,
+        /* fire when the element moves completely in or out (≈ 1 % tolerance) */
+        threshold: 0.01,
+      },
+    );
     observer.observe(elementRef.current);
 
     return () => {
       observer.disconnect();
     };
-  }, [elementRef]);
+  }, [elementRef, setVisible]);
 
   return { visible };
 };
@@ -168,24 +173,33 @@ const setZoom = (z: number | ((p: number) => number)) =>
   const setPageRef = (n: number, containerRef: RefObject<HTMLDivElement>) =>
     pagesRef.current.set(n, { containerRef });
 
-/* ────── viewport hook (only the changed snippet) ────────────────── */
-const setPageVisible = (n: number, percent: number) =>
-  setVis(prev => {
-    // 👉 nothing changed for that page
-    if (prev.get(n) === percent) return prev;
+/**
+ * Record how much of page n is visible (0 … 1).
+ * The rAF wrapper batches a burst of updates that happen while the user
+ * is still scrolling into a single React state-change → no depth explosion.
+ */
+const setPageVisible = (n: number, percent: number) => {
+  /* queue work for the next animation frame */
+  requestAnimationFrame(() => {
+    setVis(prev => {
+      /* nothing changed for that page → keep previous Map instance */
+      if (prev.get(n) === percent) return prev;
 
-    const next = new Map(prev).set(n, percent);
+      const next = new Map(prev).set(n, percent);
 
-    const firstVisible = Math.min(
-      ...[...next].filter(([, v]) => v > 0).map(([p]) => p),
-    );
+      /** pick the lowest page number that is ≥ 1 % visible */
+      const firstVisible = Math.min(
+        ...[...next].filter(([, v]) => v > 0).map(([p]) => p),
+      );
 
-    if (firstVisible !== currentPage && firstVisible !== Infinity) {
-      setPage(firstVisible);
-    }
-
-    return next;
+      if (firstVisible !== currentPage && firstVisible !== Infinity) {
+        setPage(firstVisible);
+      }
+      return next;
+    });
   });
+};
+
 
 
   const goToPage = (
@@ -269,7 +283,7 @@ export const useSize = () => {
     return () => {
       observer.disconnect();
     };
-  }, [ref]);
+  }, [ref, updateSize]);
 
   return {
     ref,
@@ -310,7 +324,7 @@ export const useViewportContainer = ({
 
   useEffect(() => {
     setViewportRef(containerRef);
-  }, []);
+  }, [containerRef, setViewportRef]);
 
   const transformations = useRef<{
     translateX: number;
@@ -360,7 +374,7 @@ export const useViewportContainer = ({
     };
 
     updateTransform();
-  }, [zoom, containerRef]);
+  }, [zoom, containerRef, elementRef, elementWrapperRef, updateTransform]);
 
   useEffect(() => {
     if (!elementRef.current || !elementWrapperRef.current) {
@@ -385,11 +399,11 @@ export const useViewportContainer = ({
     return () => {
       resizeObserver.disconnect();
     };
-  }, [elementRef, elementWrapperRef]);
+  }, [elementRef, elementWrapperRef, updateTransform]);
 
   useEffect(() => {
     updateTransform();
-  }, []);
+  }, [updateTransform]);
 
   useEffect(() => {
     const preventDefault = (e: TouchEvent) => e.preventDefault();
