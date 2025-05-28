@@ -59,7 +59,7 @@ export const useVisibility = <T extends HTMLElement>({
     return () => {
       observer.disconnect();
     };
-  }, [elementRef.current]);
+  }, [elementRef]);
 
   return { visible };
 };
@@ -159,32 +159,34 @@ export const useViewportContext = ({
   const viewportRef  = useRef<HTMLDivElement | null>(null);
 
   /* ─── helpers that update state -------------------------------- */
-  const setZoom = (z: number | ((p: number) => number)) =>
-    _setZoom(prev => clamp(typeof z === "function" ? z(prev) : z, minZoom, maxZoom));
+const setZoom = (z: number | ((p: number) => number)) =>
+  _setZoom(prev => {
+    const next = clamp(typeof z === "function" ? z(prev) : z, minZoom, maxZoom);
+    return next === prev ? prev : next;
+  });
 
   const setPageRef = (n: number, containerRef: RefObject<HTMLDivElement>) =>
     pagesRef.current.set(n, { containerRef });
 
-  const setPageVisible = (n: number, percent: number) =>
-    setVis(prev => {
-      // ────────────────────────────────────────────────────────────────
-      // 1. guard – nothing changed? → return *exactly* the same Map to
-      //    keep React from re-rendering
-      // ────────────────────────────────────────────────────────────────
-      if (prev.get(n) === percent) return prev;
-  
-      // 2. clone & update only when the value really changed
-      const next = new Map(prev);
-      next.set(n, percent);
-  
-      // keep currentPage in sync (first visible page)
-      const firstVisible = Math.min(
-        ...[...next].filter(([, v]) => v > 0).map(([p]) => p),
-      );
-      setPage(firstVisible === Infinity ? 1 : firstVisible);
-  
-      return next;             // <- new reference only when necessary
-    });
+/* ────── viewport hook (only the changed snippet) ────────────────── */
+const setPageVisible = (n: number, percent: number) =>
+  setVis(prev => {
+    // 👉 nothing changed for that page
+    if (prev.get(n) === percent) return prev;
+
+    const next = new Map(prev).set(n, percent);
+
+    const firstVisible = Math.min(
+      ...[...next].filter(([, v]) => v > 0).map(([p]) => p),
+    );
+
+    if (firstVisible !== currentPage && firstVisible !== Infinity) {
+      setPage(firstVisible);
+    }
+
+    return next;
+  });
+
 
   const goToPage = (
     n: number,
@@ -253,7 +255,7 @@ export const useSize = () => {
 
     setSize({ width, height });
     setReady(true);
-  }, [ref.current, setSize, setReady]);
+  }, [ref, setSize, setReady]);
 
   useEffect(() => {
     updateSize();
@@ -267,7 +269,7 @@ export const useSize = () => {
     return () => {
       observer.disconnect();
     };
-  }, [ref.current]);
+  }, [ref]);
 
   return {
     ref,
@@ -308,7 +310,7 @@ export const useViewportContainer = ({
 
   useEffect(() => {
     setViewportRef(containerRef);
-  }, [containerRef.current]);
+  }, []);
 
   const transformations = useRef<{
     translateX: number;
@@ -342,7 +344,7 @@ export const useViewportContainer = ({
     containerRef.current.scrollLeft = translateX;
 
     setZoom(() => transformations.current.zoom);
-  }, [containerRef.current, elementRef.current, setZoom, zoom]);
+  }, [containerRef, elementRef, setZoom, zoom, elementWrapperRef]);
 
   useEffect(() => {
     if (transformations.current.zoom === zoom || !containerRef.current) {
@@ -358,7 +360,7 @@ export const useViewportContainer = ({
     };
 
     updateTransform();
-  }, [zoom]);
+  }, [zoom, containerRef]);
 
   useEffect(() => {
     if (!elementRef.current || !elementWrapperRef.current) {
@@ -383,7 +385,7 @@ export const useViewportContainer = ({
     return () => {
       resizeObserver.disconnect();
     };
-  }, [elementRef.current, elementWrapperRef.current]);
+  }, [elementRef, elementWrapperRef]);
 
   useEffect(() => {
     updateTransform();
