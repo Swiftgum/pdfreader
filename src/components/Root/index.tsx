@@ -36,6 +36,7 @@
     loader?: ReactNode;
     /** Page to show as soon as the PDF is ready (1-based, default = 1) */
     initialPage?: number;
+    onReady?: () => void;
   }
   
   /** What callers can do with `ref` */
@@ -102,6 +103,7 @@
             : initialPage;
   
         viewportContext.goToPage?.(safePage, { smooth: false });
+        props.onReady?.();
       }, [ready, initialPage, viewportContext, pdfDocumentProxy]);
   
       /* ---------- render --------------------------------------------- */
