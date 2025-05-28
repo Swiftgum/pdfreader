@@ -85,14 +85,7 @@ import { Primitive } from "../Primitive";
           </PDFDocumentContext.Provider>
         ) : (
             /* fallback skeleton if caller didn't supply one ------------- */
-            loader ?? (
-              <div className="grid place-items-center h-full">
-                <div
-                  className="pdf-skeleton rounded-[2px]"
-                  style={{ width: 240, height: 240 * 1.414 }}
-                />
-              </div>
-            )
+            loader ?? null
         )}
       </Primitive.div>
     );
